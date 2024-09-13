@@ -6,4 +6,5 @@ export interface Hackathon {
   description: string;
   image: File | string;
   level: "easy" | "medium" | "hard";
+  objective: string;
 }

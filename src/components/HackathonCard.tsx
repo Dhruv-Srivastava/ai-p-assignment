@@ -1,9 +1,18 @@
+import moment from "moment";
 import { cn } from "../utils/cn";
 
 import Badge from "./Badge";
 import Timer from "./Timer";
+import { Link } from "react-router-dom";
 
-export default function HackathonCard({ image, badgeTitle, title, timestamp }) {
+export default function HackathonCard({
+  badgeTitle,
+  name,
+  image,
+  timestamp,
+  endDate,
+  id,
+}) {
   const timerTitle =
     badgeTitle === "upcoming"
       ? "Starts in"
@@ -35,15 +44,24 @@ export default function HackathonCard({ image, badgeTitle, title, timestamp }) {
       </Badge>
       <div className="w-full flex flex-col gap-6 items-center px-12">
         <p className="text-lg font-semibold text-black leading-tight text-center">
-          {title}
+          {name}
         </p>
         <div className="flex flex-col gap-2 items-center">
           <p className="text-sm font-medium text-[#444444]">{timerTitle}</p>
-          <Timer timestamp={timestamp} />
+          {badgeTitle !== "past" ? (
+            <Timer timestamp={timestamp} />
+          ) : (
+            <p className="text-[#454545] font-semibold text-xl my-2.5">
+              {moment(endDate).format("Do MMM'YY hh:mm A")}
+            </p>
+          )}
         </div>
-        <button className="bg-[#44924C] py-3 px-5 text-white text-sm font-semibold mt-3 rounded-xl">
+        <Link
+          to={`/hackathon/${id}`}
+          className="bg-[#44924C] py-3 px-5 text-white text-sm font-semibold mt-3 rounded-xl"
+        >
           Participate Now
-        </button>
+        </Link>
       </div>
     </article>
   );

@@ -8,6 +8,8 @@ import moment from "moment";
 import { Hackathon } from "../utils/types";
 
 import CalendarIcon from "../assets/calendar.svg";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface HackathonFormProps {
   onSave: (data: Hackathon) => void;
@@ -20,6 +22,7 @@ export default function HackathonForm({
   initialData,
   mode,
 }: HackathonFormProps) {
+  const navigate = useNavigate();
   const {
     register,
     formState: { errors },
@@ -32,13 +35,17 @@ export default function HackathonForm({
   });
 
   const selectedBlob = useWatch({ control, name: "image" }) || [];
-
-  const selectedImage = Array.from(selectedBlob)[0];
+  console.log(selectedBlob);
 
   const watchedStartDate = useWatch({ control, name: "startDate" }) || "";
   const watchedEndDate = useWatch({ control, name: "endDate" }) || "";
 
-  console.log(watchedEndDate);
+  function validateImage(file) {
+    if (mode === "CREATE" && !selectedBlob) {
+      return "Image is required.";
+    }
+    return true;
+  }
 
   function handleDateChange(field) {
     return function (date: moment.Moment | string) {
@@ -48,8 +55,21 @@ export default function HackathonForm({
   }
 
   function onSubmit(data) {
-    onSave(data);
+    const id = onSave(data);
     reset();
+    navigate(`/hackathon/${id}`, { replace: true });
+    toast.success(
+      `Hackathon ${mode === "CREATE" ? "Created" : "Edited"} Successfully`
+    );
+  }
+
+  function validateEndDate(value: string) {
+    const startDate = moment(watchedStartDate);
+    const endDate = moment(value);
+    if (endDate.isBefore(startDate)) {
+      return "End date must be after start date";
+    }
+    return true;
   }
 
   return (
@@ -89,6 +109,7 @@ export default function HackathonForm({
         />
         <div className="outline-none text-[#444444] text-base font-medium border border-[#B7B7B7] rounded-md py-2 px-5 w-full flex items-center">
           <Datetime
+            value={moment(watchedStartDate).toDate()}
             dateFormat="Do MMM'YY"
             timeFormat="hh:mm A"
             onChange={handleDateChange("startDate")}
@@ -109,10 +130,14 @@ export default function HackathonForm({
         <input
           type="hidden"
           placeholder="Enter end date"
-          {...register("endDate", { required: `End date is required` })}
+          {...register("endDate", {
+            required: `End date is required`,
+            validate: validateEndDate,
+          })}
         />
         <div className="outline-none text-[#444444] text-base font-medium border border-[#B7B7B7] rounded-md py-2 px-5 flex justify-between items-center">
           <Datetime
+            value={moment(watchedEndDate).toDate()}
             dateFormat="Do MMM'YY"
             timeFormat="hh:mm A"
             onChange={handleDateChange("endDate")}
@@ -152,19 +177,25 @@ export default function HackathonForm({
             type="file"
             accept="images/*"
             placeholder="Enter some meaningful description"
-            {...register("image", { required: `Image is required` })}
+            {...register("image", { validate: validateImage })}
             className="absolute inset-0 w-full h-full opacity-0 z-10 outline-2 cursor-pointer"
           />
-          {selectedImage && (
+          {selectedBlob.length > 0 && (
             <motion.div
               className="w-full h-full"
-              key={URL.createObjectURL(selectedImage)}
+              key={""}
               initial={{ scale: 0, opacity: 0, rotateZ: -10 }}
               animate={{ scale: 1, opacity: 1, rotateZ: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
             >
               <img
-                src={URL.createObjectURL(selectedImage)}
+                src={
+                  mode === "CREATE"
+                    ? URL.createObjectURL(selectedBlob[0])
+                    : selectedBlob instanceof FileList
+                    ? URL.createObjectURL(selectedBlob[0])
+                    : selectedBlob
+                }
                 className="w-full h-full max-h-[320px] object-cover object-center rounded-lg"
               />
             </motion.div>
